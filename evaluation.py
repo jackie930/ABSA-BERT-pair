@@ -28,6 +28,23 @@ def get_y_true(task_name):
             else:
                 n = 2
             y_true.append(n)
+    elif task_name in ['custom_NLI_M']:
+        true_data_file = "data/custom/bert-pair/test_NLI_M.csv"
+
+        df = pd.read_csv(true_data_file,sep='\t',header=None).values
+        y_true=[]
+        for i in range(len(df)):
+            label = df[i][1]
+            assert label in ['负', '正', '其他', 'none'], "error!"
+            if label == '负':
+                n = 0
+            elif label == '正':
+                n = 1
+            elif label == '其他':
+                n = 2
+            elif label == 'none':
+                n = 3
+            y_true.append(n)
     else:
         true_data_file = "data/semeval2014/bert-pair/test_NLI_M.csv"
 
@@ -129,6 +146,13 @@ def get_y_pred(task_name, pred_data_dir):
             while s:
                 pred.append(int(s[0]))
                 score.append([float(s[1]), float(s[2]), float(s[3]), float(s[4]), float(s[5])])
+                s = f.readline().strip().split()
+    elif task_name in ["custom_NLI_M"]:
+        with open(pred_data_dir,"r",encoding="utf-8") as f:
+            s=f.readline().strip().split()
+            while s:
+                pred.append(int(s[0]))
+                score.append([float(s[1]), float(s[2]), float(s[3]), float(s[4])])
                 s = f.readline().strip().split()
     elif task_name in ["semeval_NLI_B", "semeval_QA_B"]:
         count = 0
@@ -315,6 +339,33 @@ def semeval_PRF(y_true, y_pred):
 
     return p,r,f
 
+
+def custom_PRF(y_true, y_pred):
+    """
+    Calculate "Micro P R F" of aspect detection task of customer data
+    """
+    s_all=0
+    g_all=0
+    s_g_all=0
+    for i in range(len(y_pred)//4):
+        s=set()
+        g=set()
+        for j in range(4):
+            if y_pred[i*4+j]!=3:
+                s.add(j)
+            if y_true[i*4+j]!=3:
+                g.add(j)
+        if len(g)==0:continue
+        s_g=s.intersection(g)
+        s_all+=len(s)
+        g_all+=len(g)
+        s_g_all+=len(s_g)
+
+    p=s_g_all/s_all
+    r=s_g_all/g_all
+    f=2*p*r/(p+r)
+
+    return p,r,f
 
 def semeval_Acc(y_true, y_pred, score, classes=4):
     """

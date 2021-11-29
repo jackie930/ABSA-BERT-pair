@@ -67,6 +67,40 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python run_classifier_TABSA.py \
 --num_train_epochs 6.0 \
 --output_dir results/sentihood/NLI_M \
 --seed 42
+
+
+# train chinese 
+
+```
+wget -P ./source/bert/pretrain_model/cn https://storage.googleapis.com/bert_models/2018_11_03/chinese_L-12_H-768_A-12.zip
+cd ./source/bert/pretrain_model/cn
+unzip chinese_L-12_H-768_A-12.zip 
+
+python convert_tf_checkpoint_to_pytorch.py \
+--tf_checkpoint_path ./source/bert/pretrain_model/cn/chinese_L-12_H-768_A-12/bert_model.ckpt \
+--bert_config_file ./source/bert/pretrain_model/cn/chinese_L-12_H-768_A-12/bert_config.json \
+--pytorch_dump_path ./source/bert/pretrain_model/cn/pytorch_model.bin
+
+cd generate/
+python generate_custom_NLI_M.py
+
+CUDA_VISIBLE_DEVICES=0,1,2,3 python run_classifier_TABSA-v1.py \
+--task_name custom_NLI_M \
+--data_dir data/custom/bert-pair/  \
+--vocab_file ./source/bert/pretrain_model/cn/chinese_L-12_H-768_A-12/vocab.txt \
+--bert_config_file ./source/bert/pretrain_model/cn/chinese_L-12_H-768_A-12/bert_config.json \
+--init_checkpoint ./source/bert/pretrain_model/cn/pytorch_model.bin \
+--eval_test \
+--do_lower_case \
+--max_seq_length 512 \
+--train_batch_size 48 \
+--learning_rate 2e-5 \
+--num_train_epochs 5.0 \
+--do_save_model \
+--output_dir results/custom/NLI_M \
+--seed 42
+
+
 ```
 
 Note:
